@@ -313,7 +313,16 @@ func generateDataCtrl(pkgName string, sInfoList []*structInfo) (string, error) {
 	_, _ = fmt.Fprintf(fp, "\treturn ds\n")
 	_, _ = fmt.Fprintf(fp, "}\n")
 	// Load生产
-	_, _ = fmt.Fprintf(fp, "\nfunc Load(jsonBuf []byte) (*DataSet, error) {\n")
+	_, _ = fmt.Fprintf(fp, "\nfunc Load(jsonFile string) (*DataSet, error) {\n")
+	_, _ = fmt.Fprintf(fp,
+		"\tif _, err := os.Stat(jsonFile); err != nil {"+
+			"\t\treturn nil, err\n"+
+			"\t}\n"+
+			"\tjsonBuf, err := os.ReadFile(jsonFile)\n"+
+			"\t if err != nil {"+
+			"\t\treturn nil, err\n"+
+			"\t}\n",
+	)
 	_, _ = fmt.Fprintf(fp, "\tjsonDatas := make([]*_%sJson, 0)\n", pkgName)
 	_, _ = fmt.Fprintf(fp, "\terr := json.Unmarshal(jsonBuf, &jsonDatas)\n")
 	_, _ = fmt.Fprintf(fp, "\tif err != nil {\n")
