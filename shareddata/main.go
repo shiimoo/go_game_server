@@ -315,18 +315,18 @@ func generateDataCtrl(pkgName string, sInfoList []*structInfo) (string, error) {
 	_, _ = fmt.Fprintf(fp, "\treturn ds\n")
 	_, _ = fmt.Fprintf(fp, "}\n")
 	// Load生产
-	_, _ = fmt.Fprintf(fp, "\nfunc Load(jsonFile string) (*DataSet, error) {\n")
+	_, _ = fmt.Fprintf(fp, "\nfunc Load(jsonPath string) (*DataSet, error) {\n")
 	_, _ = fmt.Fprintf(fp,
-		"\tif _, err := os.Stat(jsonFile); err != nil {"+
+		"\tif _, err := os.Stat(jsonPath); err != nil {\n"+
 			"\t\treturn nil, err\n"+
 			"\t}\n"+
-			"\tjsonBuf, err := os.ReadFile(jsonFile)\n"+
-			"\t if err != nil {"+
+			"\tjsonBuf, err := os.ReadFile(jsonPath)\n"+
+			"\t if err != nil {\n"+
 			"\t\treturn nil, err\n"+
 			"\t}\n",
 	)
 	_, _ = fmt.Fprintf(fp, "\tjsonDatas := make([]*_%sJson, 0)\n", pkgName)
-	_, _ = fmt.Fprintf(fp, "\terr := json.Unmarshal(jsonBuf, &jsonDatas)\n")
+	_, _ = fmt.Fprintf(fp, "\terr = json.Unmarshal(jsonBuf, &jsonDatas)\n")
 	_, _ = fmt.Fprintf(fp, "\tif err != nil {\n")
 	_, _ = fmt.Fprintf(fp, "\t\treturn nil, err\n")
 	_, _ = fmt.Fprintf(fp, "\t}\n")
