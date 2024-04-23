@@ -279,8 +279,10 @@ func generateDataCtrl(pkgName string, sInfoList []*structInfo) (string, error) {
 	// 引用
 	_, _ = fmt.Fprintf(fp, "import (\n"+
 		"\t\"encoding/json\"\n"+
+		"\t\"os\"\n"+
 		")\n") // 包名
 
+	_, _ = fmt.Fprintf(fp, "\nconst JsonFile = \"%s.json\"\n", pkgName)
 	// 类型定义or声明
 	_, _ = fmt.Fprintf(fp, "\ntype DataSet struct {\n")
 	_, _ = fmt.Fprintf(fp, "\tset []*%s // 数据集合\n", rootName)
