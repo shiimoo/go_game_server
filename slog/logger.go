@@ -29,7 +29,10 @@ var logLvStr = map[LogLv]string{
 }
 
 func tranLogLv(lv LogLv) string {
-	return logLvStr[lv]
+	if tran, ok := logLvStr[lv]; ok {
+		return tran + " | "
+	}
+	return ""
 }
 
 /* bufferPool : Avoid repeated creation and release*/
@@ -66,6 +69,8 @@ func (l *Logger) Output(level LogLv, msgSplit func([]byte) []byte) {
 	defer putBuffer(buf)
 	// add prefix
 	*buf = append(*buf, l.Prefix()...)
+	// add loglv
+	*buf = append(*buf, tranLogLv(level)...)
 	// add content
 	*buf = msgSplit(*buf)
 	*buf = append(*buf, '\n')
@@ -178,7 +183,7 @@ func NewLogger() *Logger {
 func DefaultPrefix() string {
 	now := time.Now()
 	return fmt.Sprintf(
-		"[%s]",
+		"[%s] ",
 		now.Format("2006-01-02 15:04:05"),
 	)
 }
