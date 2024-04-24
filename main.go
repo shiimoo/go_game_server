@@ -8,4 +8,5 @@ func main() {
 	})
 	slog.Log(1, 2, 3, 4, 5)
 	slog.Log(10, 2, 3, 4, 5)
+	slog.Logf("text:%v-%v-%v-%v-%v", 10, 2, 3, 4, 5)
 }
