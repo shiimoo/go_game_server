@@ -57,12 +57,14 @@ func putBuffer(p *[]byte) {
 
 type Logger struct {
 	name string
-	// *.log file path getfunc, if not, it's ""
-	LogPath func() string
 	// out sava lock
 	outMu sync.Mutex
 
 	Prefix func() string
+}
+
+func (l *Logger) GetName() string {
+	return l.name
 }
 
 func (l *Logger) Output(level LogLv, msgSplit func([]byte) []byte) {
@@ -79,7 +81,7 @@ func (l *Logger) Output(level LogLv, msgSplit func([]byte) []byte) {
 	defer l.outMu.Unlock()
 
 	os.Stdout.Write(*buf) // console output
-	logPath := l.LogPath()
+	logPath := defaultLogPath(l)
 	if logPath != "" {
 		fp, _ := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND, 0644)
 		if fp != nil {
@@ -91,11 +93,6 @@ func (l *Logger) Output(level LogLv, msgSplit func([]byte) []byte) {
 // SetPrefix
 func (l *Logger) SetPrefix(f func() string) {
 	l.Prefix = f
-}
-
-// SetLogPath
-func (l *Logger) SetLogPath(f func() string) {
-	l.LogPath = f
 }
 
 /* ----- log 日志记录相关方法 ----- */
@@ -176,7 +173,7 @@ func (l *Logger) Fatalf(format string, v ...any) {
 
 func NewLogger(key string) *Logger {
 	l := new(Logger)
-	l.LogPath = DefaultLogPath
+	l.name = key
 	l.Prefix = DefaultPrefix
 	loggerMgr.Store(key, l)
 	return l
@@ -190,6 +187,11 @@ func DefaultPrefix() string {
 	)
 }
 
-func DefaultLogPath() string {
+// *.log file path, if not, it's ""
+var defaultLogPath = func(*Logger) string {
 	return ""
+}
+
+func SetLogPath(f func(*Logger) string) {
+	defaultLogPath = f
 }
