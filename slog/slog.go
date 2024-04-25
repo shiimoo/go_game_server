@@ -1,6 +1,6 @@
 package slog
 
-var defaultLogger = NewLogger()
+var defaultLogger = NewLogger("defaultLogger")
 
 func Default() *Logger {
 	return defaultLogger

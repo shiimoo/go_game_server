@@ -56,6 +56,7 @@ func putBuffer(p *[]byte) {
 /* Logger */
 
 type Logger struct {
+	name string
 	// *.log file path getfunc, if not, it's ""
 	LogPath func() string
 	// out sava lock
@@ -173,10 +174,11 @@ func (l *Logger) Fatalf(format string, v ...any) {
 	os.Exit(1)
 }
 
-func NewLogger() *Logger {
+func NewLogger(key string) *Logger {
 	l := new(Logger)
 	l.LogPath = DefaultLogPath
 	l.Prefix = DefaultPrefix
+	loggerMgr.Store(key, l)
 	return l
 }
 
