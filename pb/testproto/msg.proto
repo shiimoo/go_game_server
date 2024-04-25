@@ -1,0 +1,6 @@
+syntax = "proto3";
+package test;
+message AddFriendReq {
+    repeated string phone = 1;
+    string keyword =2;
+}

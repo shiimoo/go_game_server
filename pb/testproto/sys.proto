@@ -1,0 +1,6 @@
+syntax = "proto3";
+package sys;
+message system {
+    repeated string phone = 1;
+    string keyword =2;
+}
