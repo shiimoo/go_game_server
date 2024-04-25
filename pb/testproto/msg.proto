@@ -3,4 +3,13 @@ package test;
 message AddFriendReq {
     repeated string phone = 1;
     string keyword =2;
+    map<int32, string> tt =3;
+    Friend f1 = 4;
+    // repeated Friend fs = 5;
+    // map<int32, Friend> fm = 6;
+}
+
+message Friend {
+    string name = 1;
+    uint32 age = 2;
 }

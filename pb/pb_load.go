@@ -22,10 +22,9 @@ func LoadProto(dir string) error {
 	if err != nil {
 		return err
 	}
-	for _, d := range descs {
-		fmt.Println(d.GetPackage())
-		for _, msgType := range d.GetMessageTypes() {
-			fmt.Println(msgType.GetName())
+	for _, pbfile := range descs {
+		for _, msgType := range pbfile.GetMessageTypes() {
+			getMsgSet().RegisterMsg(pbfile.GetPackage(), msgType)
 		}
 	}
 
