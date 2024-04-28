@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"time"
+
+	"github.com/shiimoo/go_game_server/id"
 )
 
 /* mgr */
@@ -19,8 +21,7 @@ type TcpMgr struct {
 
 	listener *net.TCPListener // 监听器
 	// 链接集合, 中央管理器
-	count int // 临时计数器，将被新的id管理器代替
-	fds   map[int]*Fd
+	fds map[int]*Fd
 
 	cFunc func(c net.Conn) // 链接回调
 }
@@ -59,9 +60,10 @@ func (m *TcpMgr) initListen() error {
 }
 
 func (m *TcpMgr) AddFd(c net.Conn) {
-	fd := newFd(m.count, c)
+	// todo 并发读写
+	fd := newFd(m.ctx, id.Gen(), c)
 	m.fds[fd.Id()] = fd
-	m.count += 1
+	go fd.start()
 }
 
 func (m *TcpMgr) _start() {
@@ -92,6 +94,7 @@ func (m *TcpMgr) _start() {
 				m.cFunc(conn)
 			}
 			fmt.Println("链接接入", conn.RemoteAddr(), m.cFunc == nil)
+			m.AddFd(conn)
 		}
 	}
 }
@@ -109,12 +112,50 @@ func (m *TcpMgr) Close() {
 type Fd struct {
 	id int      // 分配的唯一id
 	c  net.Conn // 链接
+
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
-func newFd(id int, c net.Conn) *Fd {
-	return &Fd{id, c}
+func newFd(parent context.Context, id int, c net.Conn) *Fd {
+	f := new(Fd)
+	f.id = id
+	f.c = c
+	f.ctx, f.cancel = context.WithCancel(parent)
+	return f
 }
 
 func (f *Fd) Id() int {
 	return f.id
+}
+
+func (f *Fd) start() {
+	for {
+		select {
+		case <-f.ctx.Done():
+			_ = f.c.Close()
+			// todo 通知链接关闭
+			fmt.Println("conn close:", f.Id())
+			return
+		default:
+			err := f.c.SetDeadline(time.Now().Add(time.Millisecond))
+			if err != nil {
+				fmt.Println(" f.c.SetDeadline(time.Now().Add(time.Millisecond))", err)
+			}
+			bs := make([]byte, 128)
+			n, err := f.c.Read(bs)
+			if err != nil {
+				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+					continue
+				} else {
+					f.Close()
+				}
+			}
+			bs = bs[:n]
+		}
+	}
+}
+
+func (f *Fd) Close() {
+	f.cancel()
 }
