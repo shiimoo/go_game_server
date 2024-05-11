@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/shiimoo/go_game_server/id"
@@ -21,9 +22,10 @@ type TcpMgr struct {
 
 	listener *net.TCPListener // 监听器
 	// 链接集合, 中央管理器
-	fds map[int]*Fd
+	fds    map[int]*Fd
+	fdLock sync.RWMutex // fds 锁控制
 
-	cFunc func(c net.Conn) // 链接回调
+	cFunc func(c net.Conn)
 }
 
 func NewTcpMgr(parent context.Context, ip string, port int) (*TcpMgr, error) {
@@ -60,8 +62,9 @@ func (m *TcpMgr) initListen() error {
 }
 
 func (m *TcpMgr) AddFd(c net.Conn) {
-	// todo 并发读写
-	fd := newFd(m.ctx, id.Gen(), c)
+	m.fdLock.Lock()
+	defer m.fdLock.Unlock()
+	fd := newFd(m.ctx, id.Gen(), c, 100) // 暂定100毫秒读取超时
 	m.fds[fd.Id()] = fd
 	go fd.start()
 }
@@ -110,17 +113,22 @@ func (m *TcpMgr) Close() {
 /* connFd */
 
 type Fd struct {
-	id int      // 分配的唯一id
-	c  net.Conn // 链接
+	id          int      // 分配的唯一id
+	c           net.Conn // 链接
+	readTimeout int      // 读取(毫秒) 超时
 
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
-func newFd(parent context.Context, id int, c net.Conn) *Fd {
+func newFd(parent context.Context, id int, c net.Conn, timeout int) *Fd {
+	if timeout < 0 {
+		timeout = 0
+	}
 	f := new(Fd)
 	f.id = id
 	f.c = c
+	f.readTimeout = timeout
 	f.ctx, f.cancel = context.WithCancel(parent)
 	return f
 }
@@ -138,9 +146,9 @@ func (f *Fd) start() {
 			fmt.Println("conn close:", f.Id())
 			return
 		default:
-			err := f.c.SetDeadline(time.Now().Add(time.Millisecond))
+			err := f.c.SetDeadline(time.Now().Add(time.Duration(f.readTimeout)))
 			if err != nil {
-				fmt.Println(" f.c.SetDeadline(time.Now().Add(time.Millisecond))", err)
+				fmt.Println(" set read Time out err:", err)
 			}
 			bs := make([]byte, 128)
 			n, err := f.c.Read(bs)
@@ -151,6 +159,7 @@ func (f *Fd) start() {
 					f.Close()
 				}
 			}
+
 			bs = bs[:n]
 		}
 	}
