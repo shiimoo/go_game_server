@@ -1,4 +1,4 @@
-package slog
+package blog
 
 var defaultLogger = NewLogger("defaultLogger")
 

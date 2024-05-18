@@ -5,8 +5,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/shiimoo/go_game_server/blog"
 	"github.com/shiimoo/go_game_server/net"
-	"github.com/shiimoo/go_game_server/slog"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 	ctx := context.Background()
 	tl, err := net.NewTcpMgr(ctx, "", 8080)
 	if err != nil {
-		slog.Fatal(err)
+		blog.Fatal(err)
 	}
 	tl.Start()
 
